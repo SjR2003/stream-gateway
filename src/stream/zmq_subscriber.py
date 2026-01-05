@@ -3,6 +3,7 @@ from threading import Thread
 import logging
 import zmq
 
+
 class ZMQSubscriber:
     def __init__(self, endpoint=None):
         self.__logger = logging.getLogger(__name__)
@@ -25,9 +26,9 @@ class ZMQSubscriber:
         return True
 
     def get_message(self):
-        if self.__message_queue:
+        if len(self.__message_queue) > 0:
             return self.__message_queue[-1]
-        
+
         self.__logger.debug("No messages in queue")
         return None
 
@@ -44,18 +45,20 @@ class ZMQSubscriber:
         except Exception as e:
             self.__logger.error(f"Connect Failed: {e}")
             return False
-        
-    def __receive_loop(self ):
+
+    def __receive_loop(self):
         while self.__running:
             try:
-                message = self.__socket.recv_multipart()
+                message = self.__socket.recv_pyobj()
                 self.__logger.debug(f"Received message with {len(message)} parts")
                 self.__message_queue.append(message)
                 self.__message_count += 1
             except zmq.Again:
                 self.__logger.debug("Receive timed out, retrying...")
+                print("Receive timed out, retrying...")
                 continue
             except Exception as e:
                 self.__logger.error(f"Receive Failed: {e}")
+                print(f"Receive Failed: {e}")
                 self.__running = False
                 break
